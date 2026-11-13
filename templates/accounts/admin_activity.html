@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Activity Log{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Activity log</h1>
+    <p>Read-only record of important actions by all users.</p>
+  </div>
+</div>
+
+<div class="card">
+  <form method="get" class="toolbar">
+    <select name="action" class="form-control" onchange="this.form.submit()">
+      <option value="">All actions</option>
+      {% for value, label in actions %}
+        <option value="{{ value }}" {% if value == action %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <noscript><button class="btn" type="submit">Filter</button></noscript>
+  </form>
+
+  {% include 'accounts/_activity_table.html' with logs=page.object_list show_user=True %}
+
+  {% if page.paginator.num_pages > 1 %}
+  <div class="pager">
+    {% if page.has_previous %}<a href="?{% if action %}action={{ action }}&{% endif %}page={{ page.previous_page_number }}">← Previous</a>{% endif %}
+    <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?{% if action %}action={{ action }}&{% endif %}page={{ page.next_page_number }}">Next →</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

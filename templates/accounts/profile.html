@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>My profile</h1>
+    <p>Your account information.</p>
+  </div>
+  <div class="form-actions" style="margin:0">
+    <a class="btn" href="{% url 'accounts:profile_edit' %}">Edit profile</a>
+    <a class="btn secondary" href="{% url 'accounts:password_change' %}">Change password</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="profile-head">
+    <div class="avatar">{{ profile_user.full_name|slice:":1"|upper }}</div>
+    <div>
+      <h2>{{ profile_user.full_name }}</h2>
+      <p><span class="badge {% if profile_user.is_admin %}admin{% endif %}">{{ profile_user.get_role_display }}</span></p>
+    </div>
+  </div>
+  <dl class="details">
+    <dt>Email</dt><dd>{{ profile_user.email }}</dd>
+    <dt>Business name</dt><dd>{{ profile_user.business_name|default:"—" }}</dd>
+    <dt>Role</dt><dd>{{ profile_user.get_role_display }}</dd>
+    <dt>Account status</dt><dd>{% if profile_user.is_active %}Active{% else %}Deactivated{% endif %}</dd>
+    <dt>Member since</dt><dd>{{ profile_user.created_at|date:"F d, Y" }}</dd>
+    <dt>Last login</dt><dd>{{ profile_user.last_login|date:"F d, Y h:i A"|default:"—" }}</dd>
+  </dl>
+</div>
+{% endblock %}

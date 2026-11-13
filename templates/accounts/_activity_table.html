@@ -1,0 +1,21 @@
+{% if logs %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>When</th>{% if show_user %}<th>User</th>{% endif %}<th>Action</th><th>Details</th></tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td>{{ log.created_at|date:"M d, Y h:i A" }}</td>
+        {% if show_user %}<td>{{ log.user.email }}</td>{% endif %}
+        <td><span class="badge">{{ log.get_action_display }}</span></td>
+        <td>{{ log.details|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty">No activity recorded yet.</p>
+{% endif %}

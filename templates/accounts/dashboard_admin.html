@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Administrator dashboard</h1>
+    <p>Manage user access and review system activity.</p>
+  </div>
+  <a class="btn" href="{% url 'accounts:admin_users' %}">Manage users</a>
+</div>
+
+<div class="grid grid-4" style="margin-bottom:20px">
+  <div class="card stat"><div class="label">Total users</div><div class="value">{{ total_users }}</div></div>
+  <div class="card stat"><div class="label">Business owners</div><div class="value">{{ owner_count }}</div></div>
+  <div class="card stat"><div class="label">Administrators</div><div class="value">{{ admin_count }}</div></div>
+  <div class="card stat"><div class="label">Deactivated accounts</div><div class="value">{{ inactive_count }}</div></div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h2>Newest accounts</h2>
+    {% if recent_users %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Role</th><th>Joined</th></tr></thead>
+        <tbody>
+          {% for u in recent_users %}
+          <tr>
+            <td>{{ u.full_name }}<br><small class="help">{{ u.email }}</small></td>
+            <td><span class="badge {% if u.is_admin %}admin{% endif %}">{{ u.get_role_display }}</span></td>
+            <td>{{ u.created_at|date:"M d, Y" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p class="empty">No users yet.</p>{% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Recent activity <a href="{% url 'accounts:admin_activity' %}" style="font-size:.85rem;font-weight:400">· view all</a></h2>
+    {% include 'accounts/_activity_table.html' with logs=recent_activity show_user=True %}
+  </div>
+</div>
+{% endblock %}

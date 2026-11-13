@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<div class="auth-wrap card">
+  <h1>Log in</h1>
+  <p class="sub">Welcome back to BookEase.</p>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <ul class="errors non-field">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% for field in form %}{% include 'accounts/_field.html' %}{% endfor %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit" class="btn block">Log in</button>
+  </form>
+
+  <p class="switch">No account yet? <a href="{% url 'accounts:register' %}">Register</a></p>
+</div>
+{% endblock %}
