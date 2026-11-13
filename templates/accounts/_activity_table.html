@@ -2,15 +2,20 @@
 <div class="table-wrap">
   <table>
     <thead>
-      <tr><th>When</th>{% if show_user %}<th>User</th>{% endif %}<th>Action</th><th>Details</th></tr>
+      <tr>
+        <th>When</th>
+        {% if show_user %}<th>User</th>{% endif %}
+        <th>Action</th>
+        {% if not compact %}<th>Details</th>{% endif %}
+      </tr>
     </thead>
     <tbody>
       {% for log in logs %}
       <tr>
-        <td>{{ log.created_at|date:"M d, Y h:i A" }}</td>
+        <td class="nowrap" title="{{ log.created_at|date:'Y-m-d H:i:s' }}">{{ log.created_at|date:"M d, h:i A" }}</td>
         {% if show_user %}<td>{{ log.user.email }}</td>{% endif %}
         <td><span class="badge">{{ log.get_action_display }}</span></td>
-        <td>{{ log.details|default:"—" }}</td>
+        {% if not compact %}<td>{{ log.details|default:"—" }}</td>{% endif %}
       </tr>
       {% endfor %}
     </tbody>

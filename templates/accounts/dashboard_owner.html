@@ -3,24 +3,103 @@
 {% block content %}
 <div class="page-head">
   <div>
-    <h1>Hello, {{ user.get_short_name }}</h1>
+    <h1>Dashboard</h1>
     <p>{% if user.business_name %}{{ user.business_name }} · {% endif %}Business Owner dashboard</p>
   </div>
   <a class="btn secondary" href="{% url 'accounts:profile' %}">View profile</a>
 </div>
 
-<div class="card">
-  <h2>Your bookkeeping modules</h2>
-  <div class="grid grid-3">
-    <div class="card module soon"><h3>Transactions <span class="badge soon">Coming soon</span></h3><p>Record income and expenses.</p></div>
-    <div class="card module soon"><h3>Categories <span class="badge soon">Coming soon</span></h3><p>Organize your transactions.</p></div>
-    <div class="card module soon"><h3>Receipts <span class="badge soon">Coming soon</span></h3><p>Upload and link receipts.</p></div>
-    <div class="card module soon"><h3>Customers &amp; Suppliers <span class="badge soon">Coming soon</span></h3><p>Keep contact records.</p></div>
-    <div class="card module soon"><h3>Reports <span class="badge soon">Coming soon</span></h3><p>Income, expenses, net income.</p></div>
-    <div class="card module">
-      <h3>My account</h3>
-      <p>Update your name, business name, email, or password.</p>
-      <p><a href="{% url 'accounts:profile_edit' %}">Edit profile →</a></p>
+<div class="card banner">
+  <div>
+    <h2>Hello, {{ user.get_short_name }}</h2>
+    <p>Your account is ready. Bookkeeping tools will appear here as they are added.</p>
+  </div>
+  <a class="btn" href="{% url 'accounts:profile_edit' %}">Edit profile</a>
+</div>
+
+<div class="grid grid-3">
+  <div class="card stat">
+    <div class="stat-icon"><svg class="ico">
+        <use href="#i-swap" />
+      </svg></div>
+    <div>
+      <div class="label">Total income</div>
+      <div class="value dim">—</div>
+      <div class="hint">Available with Transactions</div>
+    </div>
+  </div>
+  <div class="card stat">
+    <div class="stat-icon rose"><svg class="ico">
+        <use href="#i-receipt" />
+      </svg></div>
+    <div>
+      <div class="label">Total expenses</div>
+      <div class="value dim">—</div>
+      <div class="hint">Available with Transactions</div>
+    </div>
+  </div>
+  <div class="card stat">
+    <div class="stat-icon blue"><svg class="ico">
+        <use href="#i-chart" />
+      </svg></div>
+    <div>
+      <div class="label">Net income</div>
+      <div class="value dim">—</div>
+      <div class="hint">Available with Transactions</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <h2>What's available</h2>
+    <ul class="roadmap">
+      <li>
+        <span class="ico-wrap done"><svg class="ico">
+            <use href="#i-user" />
+          </svg></span>
+        <div><strong>Account &amp; profile</strong><small>Register, log in, update your details</small></div>
+        <span class="badge">Ready</span>
+      </li>
+      <li>
+        <span class="ico-wrap"><svg class="ico">
+            <use href="#i-swap" />
+          </svg></span>
+        <div><strong>Transactions &amp; categories</strong><small>Record income and expenses</small></div>
+        <span class="badge soon">Coming soon</span>
+      </li>
+      <li>
+        <span class="ico-wrap"><svg class="ico">
+            <use href="#i-receipt" />
+          </svg></span>
+        <div><strong>Receipts, customers &amp; suppliers</strong><small>Attach receipts and keep contacts</small></div>
+        <span class="badge soon">Coming soon</span>
+      </li>
+      <li>
+        <span class="ico-wrap"><svg class="ico">
+            <use href="#i-chart" />
+          </svg></span>
+        <div><strong>Reports</strong><small>Income, expenses and net income</small></div>
+        <span class="badge soon">Coming soon</span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Account overview</h2>
+    <dl class="details">
+      <dt>Name</dt>
+      <dd>{{ user.full_name }}</dd>
+      <dt>Email</dt>
+      <dd>{{ user.email }}</dd>
+      <dt>Business</dt>
+      <dd>{{ user.business_name|default:"—" }}</dd>
+      <dt>Member since</dt>
+      <dd>{{ user.created_at|date:"M d, Y" }}</dd>
+    </dl>
+    <div class="form-actions" style="margin-top:18px">
+      <a class="btn secondary small" href="{% url 'accounts:profile_edit' %}">Edit profile</a>
+      <a class="btn secondary small" href="{% url 'accounts:password_change' %}">Change password</a>
     </div>
   </div>
 </div>

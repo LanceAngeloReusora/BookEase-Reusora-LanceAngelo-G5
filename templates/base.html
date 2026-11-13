@@ -1,56 +1,189 @@
-{% load static %}<!DOCTYPE html>
+{% load static %}
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}BookEase{% endblock %} · BookEase</title>
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
-<body>
-  <header class="nav">
-    <div class="nav-inner">
-      <a class="brand" href="{% url 'accounts:dashboard' %}">Book<span>Ease</span></a>
 
-      {% if user.is_authenticated %}
-        {% with current=request.resolver_match.url_name %}
-        <nav class="nav-links">
-          {% if user.is_admin %}
-            <a href="{% url 'accounts:admin_dashboard' %}" class="{% if current == 'admin_dashboard' %}active{% endif %}">Dashboard</a>
-            <a href="{% url 'accounts:admin_users' %}" class="{% if current == 'admin_users' %}active{% endif %}">Users</a>
-            <a href="{% url 'accounts:admin_activity' %}" class="{% if current == 'admin_activity' %}active{% endif %}">Activity Log</a>
-          {% else %}
-            <a href="{% url 'accounts:owner_dashboard' %}" class="{% if current == 'owner_dashboard' %}active{% endif %}">Dashboard</a>
-          {% endif %}
-          <a href="{% url 'accounts:profile' %}" class="{% if current == 'profile' or current == 'profile_edit' or current == 'password_change' %}active{% endif %}">My Profile</a>
-        </nav>
-        {% endwith %}
-        <div class="nav-user">
-          <div class="who">{{ user.full_name }}<small>{{ user.get_role_display }}</small></div>
-          <form method="post" action="{% url 'accounts:logout' %}" class="inline-form">
-            {% csrf_token %}
-            <button type="submit" class="btn ghost">Log out</button>
-          </form>
+<body class="{% if user.is_authenticated %}app{% else %}guest{% endif %}">
+
+  <!-- Icon set (inline SVG, used with <use href="#i-name">) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 24 24">
+        <path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
+      </symbol>
+      <symbol id="i-users" viewBox="0 0 24 24">
+        <circle cx="9" cy="8" r="3.5" />
+        <path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
+        <path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.3c2.2.7 3.5 2.6 3.5 5.7" />
+      </symbol>
+      <symbol id="i-user" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
+      </symbol>
+      <symbol id="i-swap" viewBox="0 0 24 24">
+        <path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" />
+      </symbol>
+      <symbol id="i-tag" viewBox="0 0 24 24">
+        <path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z" />
+        <circle cx="7.5" cy="7.5" r="1.2" />
+      </symbol>
+      <symbol id="i-receipt" viewBox="0 0 24 24">
+        <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
+        <path d="M9 8h6M9 12h6" />
+      </symbol>
+      <symbol id="i-truck" viewBox="0 0 24 24">
+        <path d="M2 6h12v10H2zM14 10h4l4 3v3h-8z" />
+        <circle cx="7" cy="18" r="2" />
+        <circle cx="18" cy="18" r="2" />
+      </symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24">
+        <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+      </symbol>
+      <symbol id="i-activity" viewBox="0 0 24 24">
+        <path d="M3 12h4l3-8 4 16 3-8h4" />
+      </symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24">
+        <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" />
+        <path d="M9 12l2 2 4-4" />
+      </symbol>
+      <symbol id="i-off" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M5.6 5.6l12.8 12.8" />
+      </symbol>
+      <symbol id="i-logout" viewBox="0 0 24 24">
+        <path d="M9 21H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h4M16 17l5-5-5-5M21 12H9" />
+      </symbol>
+      <symbol id="i-book" viewBox="0 0 24 24">
+        <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" />
+        <path d="M5 17a3 3 0 0 1 3-3h11M9 8h6" />
+      </symbol>
+    </defs>
+  </svg>
+
+  {% if user.is_authenticated %}
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="{% url 'accounts:dashboard' %}">
+        <span class="brand-mark"><svg class="ico">
+            <use href="#i-book" />
+          </svg></span>
+        <span class="brand-name">Book<span>Ease</span></span>
+      </a>
+
+      {% with current=request.resolver_match.url_name %}
+      <nav class="side-nav" aria-label="Main">
+        {% if user.is_admin %}
+        <p class="side-label">Administration</p>
+        <a class="nav-item {% if current == 'admin_dashboard' %}active{% endif %}"
+          href="{% url 'accounts:admin_dashboard' %}"><svg class="ico">
+            <use href="#i-home" />
+          </svg>Dashboard</a>
+        <a class="nav-item {% if current == 'admin_users' %}active{% endif %}"
+          href="{% url 'accounts:admin_users' %}"><svg class="ico">
+            <use href="#i-users" />
+          </svg>Users</a>
+        <a class="nav-item {% if current == 'admin_activity' %}active{% endif %}"
+          href="{% url 'accounts:admin_activity' %}"><svg class="ico">
+            <use href="#i-activity" />
+          </svg>Activity log</a>
+        {% else %}
+        <p class="side-label">Menu</p>
+        <a class="nav-item {% if current == 'owner_dashboard' %}active{% endif %}"
+          href="{% url 'accounts:owner_dashboard' %}"><svg class="ico">
+            <use href="#i-home" />
+          </svg>Dashboard</a>
+        <span class="nav-item disabled"><svg class="ico">
+            <use href="#i-swap" />
+          </svg>Transactions<em>Soon</em></span>
+        <span class="nav-item disabled"><svg class="ico">
+            <use href="#i-tag" />
+          </svg>Categories<em>Soon</em></span>
+        <span class="nav-item disabled"><svg class="ico">
+            <use href="#i-receipt" />
+          </svg>Receipts<em>Soon</em></span>
+        <span class="nav-item disabled"><svg class="ico">
+            <use href="#i-users" />
+          </svg>Customers<em>Soon</em></span>
+        <span class="nav-item disabled"><svg class="ico">
+            <use href="#i-truck" />
+          </svg>Suppliers<em>Soon</em></span>
+        <span class="nav-item disabled"><svg class="ico">
+            <use href="#i-chart" />
+          </svg>Reports<em>Soon</em></span>
+        {% endif %}
+
+        <p class="side-label">Account</p>
+        <a class="nav-item {% if current == 'profile' or current == 'profile_edit' or current == 'password_change' %}active{% endif %}"
+          href="{% url 'accounts:profile' %}"><svg class="ico">
+            <use href="#i-user" />
+          </svg>My profile</a>
+      </nav>
+      {% endwith %}
+
+      <div class="side-user">
+        <div class="avatar sm">{{ user.full_name|slice:":1"|upper }}</div>
+        <div class="side-user-info">
+          <strong>{{ user.full_name }}</strong>
+          <small>{{ user.email }}</small>
         </div>
+        <form method="post" action="{% url 'accounts:logout' %}" class="inline-form">
+          {% csrf_token %}
+          <button type="submit" class="icon-btn" title="Log out" aria-label="Log out"><svg class="ico">
+              <use href="#i-logout" />
+            </svg></button>
+        </form>
+      </div>
+    </aside>
+
+    <div class="content">
+      <header class="topbar">
+        <span class="crumb">BookEase <i>/</i> {{ user.get_role_display }}</span>
+        <span class="role-chip {% if user.is_admin %}admin{% endif %}"><svg class="ico">
+            <use href="#i-shield" />
+          </svg>{{ user.get_role_display }}</span>
+      </header>
       {% else %}
-        <nav class="nav-links"></nav>
-        <div class="nav-user">
-          <a class="btn ghost" href="{% url 'accounts:login' %}">Log in</a>
-          <a class="btn ghost" href="{% url 'accounts:register' %}">Register</a>
+      <div class="guest-shell">
+        <aside class="guest-art">
+          <a class="brand light" href="{% url 'accounts:login' %}">
+            <span class="brand-mark"><svg class="ico">
+                <use href="#i-book" />
+              </svg></span>
+            <span class="brand-name">Book<span>Ease</span></span>
+          </a>
+          <div class="guest-copy">
+            <h2>Bookkeeping that stays out of your way.</h2>
+            <p>Record income and expenses, attach receipts, and see where your business stands, all in one place.</p>
+            <ul>
+              <li>Track income and expenses</li>
+              <li>Keep receipts with each transaction</li>
+              <li>Review totals by date range</li>
+            </ul>
+          </div>
+          <small>CSIT327 · Information Management 2</small>
+        </aside>
+        <div class="guest-main">
+          {% endif %}
+
+          {% if messages %}
+          <div class="messages">
+            {% for message in messages %}
+            <div class="alert {{ message.tags }}" role="alert">{{ message }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <main class="container">
+            {% block content %}{% endblock %}
+          </main>
         </div>
-      {% endif %}
-    </div>
-  </header>
-
-  {% if messages %}
-  <div class="messages">
-    {% for message in messages %}
-      <div class="alert {{ message.tags }}" role="alert">{{ message }}</div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  <main class="container">
-    {% block content %}{% endblock %}
-  </main>
+      </div>
 </body>
+
 </html>

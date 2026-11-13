@@ -9,11 +9,43 @@
   <a class="btn" href="{% url 'accounts:admin_users' %}">Manage users</a>
 </div>
 
-<div class="grid grid-4" style="margin-bottom:20px">
-  <div class="card stat"><div class="label">Total users</div><div class="value">{{ total_users }}</div></div>
-  <div class="card stat"><div class="label">Business owners</div><div class="value">{{ owner_count }}</div></div>
-  <div class="card stat"><div class="label">Administrators</div><div class="value">{{ admin_count }}</div></div>
-  <div class="card stat"><div class="label">Deactivated accounts</div><div class="value">{{ inactive_count }}</div></div>
+<div class="grid grid-4">
+  <div class="card stat">
+    <div class="stat-icon"><svg class="ico">
+        <use href="#i-users" />
+      </svg></div>
+    <div>
+      <div class="label">Total users</div>
+      <div class="value">{{ total_users }}</div>
+    </div>
+  </div>
+  <div class="card stat">
+    <div class="stat-icon blue"><svg class="ico">
+        <use href="#i-user" />
+      </svg></div>
+    <div>
+      <div class="label">Business owners</div>
+      <div class="value">{{ owner_count }}</div>
+    </div>
+  </div>
+  <div class="card stat">
+    <div class="stat-icon violet"><svg class="ico">
+        <use href="#i-shield" />
+      </svg></div>
+    <div>
+      <div class="label">Administrators</div>
+      <div class="value">{{ admin_count }}</div>
+    </div>
+  </div>
+  <div class="card stat">
+    <div class="stat-icon rose"><svg class="ico">
+        <use href="#i-off" />
+      </svg></div>
+    <div>
+      <div class="label">Deactivated</div>
+      <div class="value">{{ inactive_count }}</div>
+    </div>
+  </div>
 </div>
 
 <div class="grid grid-2">
@@ -22,7 +54,13 @@
     {% if recent_users %}
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Name</th><th>Role</th><th>Joined</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Joined</th>
+          </tr>
+        </thead>
         <tbody>
           {% for u in recent_users %}
           <tr>
@@ -38,8 +76,9 @@
   </div>
 
   <div class="card">
-    <h2>Recent activity <a href="{% url 'accounts:admin_activity' %}" style="font-size:.85rem;font-weight:400">· view all</a></h2>
-    {% include 'accounts/_activity_table.html' with logs=recent_activity show_user=True %}
+    <h2>Recent activity <a href="{% url 'accounts:admin_activity' %}" style="font-size:.85rem;font-weight:400">· view
+        all</a></h2>
+    {% include 'accounts/_activity_table.html' with logs=recent_activity show_user=True compact=True %}
   </div>
 </div>
 {% endblock %}

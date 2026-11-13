@@ -1,20 +1,53 @@
 {% extends 'base.html' %}
-{% block title %}Log in{% endblock %}
+{% block title %}Welcome back{% endblock %}
 {% block content %}
-<div class="auth-wrap card">
-  <h1>Log in</h1>
-  <p class="sub">Welcome back to BookEase.</p>
+<section class="login-panel" aria-labelledby="login-title">
 
-  <form method="post" novalidate>
+  <div class="login-heading">
+    <span class="login-kicker">
+      YOUR BOOKKEEPING, SIMPLIFIED
+    </span>
+
+    <h1 id="login-title">Welcome back</h1>
+
+    <p class="sub">
+      Sign in to continue managing your business with BookEase.
+    </p>
+  </div>
+
+  <form method="post" novalidate class="login-form">
     {% csrf_token %}
+
     {% if form.non_field_errors %}
-      <ul class="errors non-field">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    <ul class="errors non-field" role="alert">
+      {% for e in form.non_field_errors %}
+      <li>{{ e }}</li>
+      {% endfor %}
+    </ul>
     {% endif %}
-    {% for field in form %}{% include 'accounts/_field.html' %}{% endfor %}
+
+    {% for field in form %}
+    {% include 'accounts/_field.html' %}
+    {% endfor %}
+
     <input type="hidden" name="next" value="{{ next }}">
-    <button type="submit" class="btn block">Log in</button>
+
+    <button type="submit" class="btn block login-submit">
+      Sign in <span aria-hidden="true">→</span>
+    </button>
   </form>
 
-  <p class="switch">No account yet? <a href="{% url 'accounts:register' %}">Register</a></p>
-</div>
+  <p class="switch">
+    New to BookEase?
+    <a href="{% url 'accounts:register' %}">
+      Create an account
+    </a>
+  </p>
+
+  <p class="login-security">
+    <span aria-hidden="true">⌑</span>
+    Your account is protected with secure sign-in.
+  </p>
+
+</section>
 {% endblock %}
