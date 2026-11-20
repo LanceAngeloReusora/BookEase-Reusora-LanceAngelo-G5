@@ -12,75 +12,84 @@
 <div class="card banner">
   <div>
     <h2>Hello, {{ user.get_short_name }}</h2>
-    <p>Your account is ready. Bookkeeping tools will appear here as they are added.</p>
+    <p>Keep your business finances organized by recording every income and expense.</p>
   </div>
-  <a class="btn" href="{% url 'accounts:profile_edit' %}">Edit profile</a>
+  <a class="btn" href="{% url 'bookkeeping:transaction_create' %}">+ Add transaction</a>
+</div>
+
+<div class="card">
+  <form method="get" class="toolbar date-range-toolbar">
+    <div class="field">
+      <label for="dashboard_date_from">From date</label>
+      <input id="dashboard_date_from" class="form-control" type="date" name="date_from" value="{{ date_from }}">
+    </div>
+    <div class="field">
+      <label for="dashboard_date_to">To date</label>
+      <input id="dashboard_date_to" class="form-control" type="date" name="date_to" value="{{ date_to }}">
+    </div>
+    <div class="filter-actions">
+      <button class="btn" type="submit">Update totals</button>
+      <a class="btn secondary" href="{% url 'accounts:owner_dashboard' %}">All time</a>
+    </div>
+  </form>
+  <p class="help">Totals are calculated from your saved transactions{% if date_from or date_to %} for the selected date range{% else %} for all time{% endif %}.</p>
 </div>
 
 <div class="grid grid-3">
   <div class="card stat">
-    <div class="stat-icon"><svg class="ico">
-        <use href="#i-swap" />
-      </svg></div>
+    <div class="stat-icon"><svg class="ico"><use href="#i-swap" /></svg></div>
     <div>
       <div class="label">Total income</div>
-      <div class="value dim">—</div>
-      <div class="hint">Available with Transactions</div>
+      <div class="value">₱{{ income_total|floatformat:2 }}</div>
+      <div class="hint">Recorded income</div>
     </div>
   </div>
   <div class="card stat">
-    <div class="stat-icon rose"><svg class="ico">
-        <use href="#i-receipt" />
-      </svg></div>
+    <div class="stat-icon rose"><svg class="ico"><use href="#i-receipt" /></svg></div>
     <div>
       <div class="label">Total expenses</div>
-      <div class="value dim">—</div>
-      <div class="hint">Available with Transactions</div>
+      <div class="value">₱{{ expense_total|floatformat:2 }}</div>
+      <div class="hint">Recorded expenses</div>
     </div>
   </div>
   <div class="card stat">
-    <div class="stat-icon blue"><svg class="ico">
-        <use href="#i-chart" />
-      </svg></div>
+    <div class="stat-icon blue"><svg class="ico"><use href="#i-chart" /></svg></div>
     <div>
       <div class="label">Net income</div>
-      <div class="value dim">—</div>
-      <div class="hint">Available with Transactions</div>
+      <div class="value">₱{{ net_income|floatformat:2 }}</div>
+      <div class="hint">Income minus expenses</div>
     </div>
   </div>
 </div>
 
 <div class="grid grid-2">
   <div class="card">
-    <h2>What's available</h2>
+    <h2>Bookkeeping tools</h2>
     <ul class="roadmap">
       <li>
-        <span class="ico-wrap done"><svg class="ico">
-            <use href="#i-user" />
-          </svg></span>
-        <div><strong>Account &amp; profile</strong><small>Register, log in, update your details</small></div>
+        <span class="ico-wrap done"><svg class="ico"><use href="#i-user" /></svg></span>
+        <div><strong>Account &amp; profile</strong><small>Register, log in, and update your details</small></div>
         <span class="badge">Ready</span>
       </li>
       <li>
-        <span class="ico-wrap"><svg class="ico">
-            <use href="#i-swap" />
-          </svg></span>
-        <div><strong>Transactions &amp; categories</strong><small>Record income and expenses</small></div>
-        <span class="badge soon">Coming soon</span>
+        <span class="ico-wrap done"><svg class="ico"><use href="#i-swap" /></svg></span>
+        <div><strong>Transactions</strong><small>Add, view, edit, delete, search, and filter</small></div>
+        <span class="badge">Ready</span>
       </li>
       <li>
-        <span class="ico-wrap"><svg class="ico">
-            <use href="#i-receipt" />
-          </svg></span>
-        <div><strong>Receipts, customers &amp; suppliers</strong><small>Attach receipts and keep contacts</small></div>
-        <span class="badge soon">Coming soon</span>
+        <span class="ico-wrap done"><svg class="ico"><use href="#i-tag" /></svg></span>
+        <div><strong>Categories</strong><small>Manage income and expense categories</small></div>
+        <span class="badge">Ready</span>
       </li>
       <li>
-        <span class="ico-wrap"><svg class="ico">
-            <use href="#i-chart" />
-          </svg></span>
-        <div><strong>Reports</strong><small>Income, expenses and net income</small></div>
-        <span class="badge soon">Coming soon</span>
+        <span class="ico-wrap done"><svg class="ico"><use href="#i-users" /></svg></span>
+        <div><strong>Customers &amp; suppliers</strong><small>Maintain contacts for transaction links</small></div>
+        <span class="badge">Ready</span>
+      </li>
+      <li>
+        <span class="ico-wrap"><svg class="ico"><use href="#i-receipt" /></svg></span>
+        <div><strong>Receipts &amp; reports</strong><small>Receipt uploads and detailed reports are not part of this increment</small></div>
+        <span class="badge soon">Next</span>
       </li>
     </ul>
   </div>
@@ -88,20 +97,40 @@
   <div class="card">
     <h2>Account overview</h2>
     <dl class="details">
-      <dt>Name</dt>
-      <dd>{{ user.full_name }}</dd>
-      <dt>Email</dt>
-      <dd>{{ user.email }}</dd>
-      <dt>Business</dt>
-      <dd>{{ user.business_name|default:"—" }}</dd>
-      <dt>Member since</dt>
-      <dd>{{ user.created_at|date:"M d, Y" }}</dd>
+      <dt>Name</dt><dd>{{ user.full_name }}</dd>
+      <dt>Email</dt><dd>{{ user.email }}</dd>
+      <dt>Business</dt><dd>{{ user.business_name|default:"—" }}</dd>
+      <dt>Member since</dt><dd>{{ user.created_at|date:"M d, Y" }}</dd>
     </dl>
     <div class="form-actions" style="margin-top:18px">
       <a class="btn secondary small" href="{% url 'accounts:profile_edit' %}">Edit profile</a>
       <a class="btn secondary small" href="{% url 'accounts:password_change' %}">Change password</a>
     </div>
   </div>
+</div>
+
+<div class="card">
+  <div class="section-head"><h2>Recent transactions</h2><a href="{% url 'bookkeeping:transaction_list' %}">View all</a></div>
+  {% if recent_transactions %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead>
+      <tbody>
+        {% for item in recent_transactions %}
+        <tr>
+          <td class="nowrap">{{ item.transaction_date|date:"M d, Y" }}</td>
+          <td>{% if item.type == 'INCOME' %}<span class="badge">Income</span>{% else %}<span class="badge off">Expense</span>{% endif %}</td>
+          <td>{{ item.category.name }}</td>
+          <td>{{ item.description|default:"—" }}</td>
+          <td class="nowrap"><strong>₱{{ item.amount|floatformat:2 }}</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">No transactions recorded yet. <a href="{% url 'bookkeeping:transaction_create' %}">Record your first transaction</a>.</p>
+  {% endif %}
 </div>
 
 <div class="card">

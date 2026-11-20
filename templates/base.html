@@ -98,21 +98,25 @@
           href="{% url 'accounts:owner_dashboard' %}"><svg class="ico">
             <use href="#i-home" />
           </svg>Dashboard</a>
-        <span class="nav-item disabled"><svg class="ico">
+        <a class="nav-item {% if current == 'transaction_list' or current == 'transaction_create' or current == 'transaction_update' %}active{% endif %}"
+          href="{% url 'bookkeeping:transaction_list' %}"><svg class="ico">
             <use href="#i-swap" />
-          </svg>Transactions<em>Soon</em></span>
-        <span class="nav-item disabled"><svg class="ico">
+          </svg>Transactions</a>
+        <a class="nav-item {% if current == 'category_list' or current == 'category_create' or current == 'category_update' %}active{% endif %}"
+          href="{% url 'bookkeeping:category_list' %}"><svg class="ico">
             <use href="#i-tag" />
-          </svg>Categories<em>Soon</em></span>
+          </svg>Categories</a>
+        <a class="nav-item {% if request.resolver_match.kwargs.kind == 'customers' %}active{% endif %}"
+          href="{% url 'bookkeeping:contact_list' 'customers' %}"><svg class="ico">
+            <use href="#i-users" />
+          </svg>Customers</a>
+        <a class="nav-item {% if request.resolver_match.kwargs.kind == 'suppliers' %}active{% endif %}"
+          href="{% url 'bookkeeping:contact_list' 'suppliers' %}"><svg class="ico">
+            <use href="#i-truck" />
+          </svg>Suppliers</a>
         <span class="nav-item disabled"><svg class="ico">
             <use href="#i-receipt" />
           </svg>Receipts<em>Soon</em></span>
-        <span class="nav-item disabled"><svg class="ico">
-            <use href="#i-users" />
-          </svg>Customers<em>Soon</em></span>
-        <span class="nav-item disabled"><svg class="ico">
-            <use href="#i-truck" />
-          </svg>Suppliers<em>Soon</em></span>
         <span class="nav-item disabled"><svg class="ico">
             <use href="#i-chart" />
           </svg>Reports<em>Soon</em></span>
