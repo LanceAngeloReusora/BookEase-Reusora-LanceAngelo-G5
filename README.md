@@ -26,56 +26,54 @@ Important SDD rules enforced by the feature include positive amounts, valid INCO
 
 ## Setup
 
-1. Clone or download the repository and open a terminal in the project folder.
-2. Create and activate a virtual environment:
+### Windows PowerShell
 
-   ```bash
-   python -m venv venv
-   # Windows
-   venv\Scripts\activate
-   # macOS/Linux
-   source venv/bin/activate
+1. Open a terminal in the folder containing `manage.py`.
+2. Create and activate the virtual environment:
+
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
    ```
 
-3. Install dependencies:
+3. Install dependencies inside that environment:
 
-   ```bash
-   pip install -r requirements.txt
+   ```powershell
+   python -m pip install --upgrade pip
+   python -m pip install -r requirements.txt
    ```
 
-4. Copy `.env.example` to `.env` and set your Django secret key and PostgreSQL credentials:
+4. Configure the environment. The private project bundle includes the `.env` file supplied with the original BookEase project, so you normally do not need to recreate it. If you obtained the project from public GitHub (where `.env` is intentionally not committed), create it from the example:
 
-   ```bash
-   # Windows PowerShell
+   ```powershell
    Copy-Item .env.example .env
-   # macOS/Linux
-   cp .env.example .env
+   notepad .env
    ```
 
-   **For Supabase (recommended):**
+   The supplied Supabase Session Pooler settings are already filled in in `.env.example` (`DB_HOST`, `DB_USER`, `DB_NAME`, port `5432`, and SSL mode `require`). Enter your own Supabase database password and a new Django `SECRET_KEY` before running the app.
 
-   1. Open your Supabase project and click **Connect**.
-   2. Choose **Session pooler** and copy its host and username exactly. This mode is suitable for local networks that only support IPv4.
-   3. In `.env`, set `DB_NAME=postgres`, `DB_USER` to the session-pooler username (usually `postgres.<PROJECT-REF>`), `DB_HOST` to the pooler host, `DB_PORT=5432`, your database password, and `DB_SSLMODE=require`.
+5. Apply database migrations and start the server:
 
-   Supabase direct connections use host `db.<PROJECT-REF>.supabase.co`, username `postgres`, and port `5432`; they require IPv6 unless your project has the IPv4 add-on. Use the exact connection details shown by Supabase rather than guessing the pooler hostname or username.
-
-   **For a local PostgreSQL database instead:** set `DB_NAME=bookease`, `DB_USER`, `DB_PASSWORD`, `DB_HOST=localhost`, and `DB_PORT=5432`.
-
-5. Apply the migrations and create an administrator account:
-
-   ```bash
+   ```powershell
    python manage.py migrate
-   python manage.py createsuperuser
-   ```
-
-6. Start the development server:
-
-   ```bash
    python manage.py runserver
    ```
 
-Open `http://127.0.0.1:8000/`. Business Owners can register from the Register page. Administrators are created with `createsuperuser`.
+Open `http://127.0.0.1:8000/`.
+
+### macOS / Linux
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+cp .env.example .env  # only if you do not already have your private .env
+# Fill in SECRET_KEY and DB_PASSWORD in .env
+python manage.py migrate
+python manage.py runserver
+```
+
+**Security:** `.env` is listed in `.gitignore` and must never be committed. It contains private credentials. The public repository should contain `.env.example` only.
 
 ## Roles and main routes
 
