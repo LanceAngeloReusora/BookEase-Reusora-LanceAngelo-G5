@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<div class="auth-wrap wide card">
+  <h1>{{ heading }}</h1>
+  <p class="sub">Name is required. Email, phone, and address are optional.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<ul class="errors non-field">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+    {% for field in form %}{% include 'accounts/_field.html' %}{% endfor %}
+    <div class="form-actions">
+      <button type="submit" class="btn">Save contact</button>
+      <a class="btn secondary" href="{% url 'bookkeeping:contact_list' kind %}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

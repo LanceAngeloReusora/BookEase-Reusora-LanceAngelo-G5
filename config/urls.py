@@ -5,5 +5,6 @@ from django.views.generic import RedirectView
 urlpatterns = [
     path("", RedirectView.as_view(pattern_name="accounts:dashboard", permanent=False)),
     path("", include("accounts.urls")),
+    path("", include("bookkeeping.urls")),
     path("django-admin/", admin.site.urls),
 ]
