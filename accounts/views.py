@@ -3,10 +3,13 @@ from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.dateparse import parse_date
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
+
+from bookkeeping.models import Transaction
 
 from .decorators import admin_required, owner_required
 from .forms import (
@@ -74,8 +77,42 @@ def dashboard(request):
 
 @owner_required
 def owner_dashboard(request):
+    """Owner dashboard totals are calculated from the owner's saved transactions."""
+    transactions = Transaction.objects.filter(user=request.user)
+    date_from_raw = request.GET.get("date_from", "").strip()
+    date_to_raw = request.GET.get("date_to", "").strip()
+    date_from = parse_date(date_from_raw) if date_from_raw else None
+    date_to = parse_date(date_to_raw) if date_to_raw else None
+
+    if date_from_raw and date_from:
+        transactions = transactions.filter(transaction_date__gte=date_from)
+    elif date_from_raw:
+        messages.error(request, "Enter a valid dashboard start date.")
+    if date_to_raw and date_to:
+        transactions = transactions.filter(transaction_date__lte=date_to)
+    elif date_to_raw:
+        messages.error(request, "Enter a valid dashboard end date.")
+    if date_from and date_to and date_to < date_from:
+        messages.error(request, "The dashboard end date cannot be earlier than the start date.")
+        transactions = Transaction.objects.filter(user=request.user).none()
+
+    income_total = transactions.filter(type=Transaction.Type.INCOME).aggregate(total=Sum("amount"))["total"] or 0
+    expense_total = transactions.filter(type=Transaction.Type.EXPENSE).aggregate(total=Sum("amount"))["total"] or 0
+    recent_transactions = Transaction.objects.filter(user=request.user).select_related("category")[:5]
     recent = ActivityLog.objects.filter(user=request.user)[:8]
-    return render(request, "accounts/dashboard_owner.html", {"recent_activity": recent})
+    return render(
+        request,
+        "accounts/dashboard_owner.html",
+        {
+            "recent_activity": recent,
+            "income_total": income_total,
+            "expense_total": expense_total,
+            "net_income": income_total - expense_total,
+            "recent_transactions": recent_transactions,
+            "date_from": date_from_raw,
+            "date_to": date_to_raw,
+        },
+    )
 
 
 @admin_required

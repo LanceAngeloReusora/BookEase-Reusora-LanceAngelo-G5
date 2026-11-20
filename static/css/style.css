@@ -1041,3 +1041,81 @@ dl.details dd {
     font-size: 1.5rem;
   }
 }
+
+/* ========== Bookkeeping pages ========== */
+.filter-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) repeat(4, minmax(125px, 1fr));
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.filter-grid .field,
+.date-range-toolbar .field {
+  margin-bottom: 0;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.date-range-toolbar {
+  align-items: end;
+  margin-bottom: 8px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 34px 18px;
+}
+
+.empty-state .stat-icon {
+  margin: 0 auto 12px;
+}
+
+.empty-state h2 {
+  margin: 0 0 6px;
+}
+
+.empty-state p {
+  color: var(--muted);
+  margin: 0 auto 18px;
+  max-width: 520px;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-head h2 {
+  margin-bottom: 14px;
+}
+
+button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-actions .btn {
+    flex: 1;
+    text-align: center;
+  }
+}

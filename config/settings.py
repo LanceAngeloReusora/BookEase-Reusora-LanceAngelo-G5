@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "accounts",
+    "bookkeeping",
 ]
 
 MIDDLEWARE = [
@@ -88,13 +89,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME", "bookease"),
+        "NAME": os.environ.get("DB_NAME", "postgres"),
         "USER": os.environ.get("DB_USER", "postgres"),
         "PASSWORD": os.environ.get("DB_PASSWORD", ""),
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
         # Use DB_SSLMODE=require for Supabase.
-        "OPTIONS": {"sslmode": os.environ.get("DB_SSLMODE", "prefer")},
+        "OPTIONS": {"sslmode": os.environ.get("DB_SSLMODE", "require")},
     }
 }
 

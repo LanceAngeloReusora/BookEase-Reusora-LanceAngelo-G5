@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Transactions{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Transactions</h1>
+    <p>Record and manage your business income and expenses.</p>
+  </div>
+  <a class="btn" href="{% url 'bookkeeping:transaction_create' %}">+ Add transaction</a>
+</div>
+
+<div class="grid grid-2">
+  <div class="card stat">
+    <div class="stat-icon"><svg class="ico"><use href="#i-swap" /></svg></div>
+    <div><div class="label">Income in this view</div><div class="value">₱{{ income_total|floatformat:2 }}</div></div>
+  </div>
+  <div class="card stat">
+    <div class="stat-icon rose"><svg class="ico"><use href="#i-receipt" /></svg></div>
+    <div><div class="label">Expenses in this view</div><div class="value">₱{{ expense_total|floatformat:2 }}</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <form method="get" class="filter-grid">
+    <div class="field">
+      <label for="id_q">Search</label>
+      <input id="id_q" class="form-control" type="search" name="q" value="{{ query }}" placeholder="Description, category, contact">
+    </div>
+    <div class="field">
+      <label for="id_type">Type</label>
+      <select id="id_type" name="type" class="form-control">
+        <option value="">All types</option>
+        <option value="INCOME" {% if type_filter == 'INCOME' %}selected{% endif %}>Income</option>
+        <option value="EXPENSE" {% if type_filter == 'EXPENSE' %}selected{% endif %}>Expense</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="id_category">Category</label>
+      <select id="id_category" name="category" class="form-control">
+        <option value="">All categories</option>
+        {% for category in categories %}
+        <option value="{{ category.pk }}" {% if category_filter == category.pk|stringformat:'s' %}selected{% endif %}>{{ category.name }} · {{ category.get_type_display }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="id_date_from">From</label>
+      <input id="id_date_from" class="form-control" type="date" name="date_from" value="{{ date_from }}">
+    </div>
+    <div class="field">
+      <label for="id_date_to">To</label>
+      <input id="id_date_to" class="form-control" type="date" name="date_to" value="{{ date_to }}">
+    </div>
+    <div class="filter-actions">
+      <button class="btn" type="submit">Apply filters</button>
+      <a class="btn secondary" href="{% url 'bookkeeping:transaction_list' %}">Clear</a>
+    </div>
+  </form>
+
+  {% if page.object_list %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description / Contact</th><th class="nowrap">Amount</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for item in page.object_list %}
+        <tr>
+          <td class="nowrap">{{ item.transaction_date|date:"M d, Y" }}</td>
+          <td>{% if item.type == 'INCOME' %}<span class="badge">Income</span>{% else %}<span class="badge off">Expense</span>{% endif %}</td>
+          <td>{{ item.category.name }}</td>
+          <td>
+            {{ item.description|default:"—" }}
+            {% if item.customer %}<br><small class="help">Customer: {{ item.customer.name }}</small>{% endif %}
+            {% if item.supplier %}<br><small class="help">Supplier: {{ item.supplier.name }}</small>{% endif %}
+          </td>
+          <td class="nowrap"><strong>₱{{ item.amount|floatformat:2 }}</strong></td>
+          <td class="nowrap">
+            <a class="btn secondary small" href="{% url 'bookkeeping:transaction_update' item.pk %}">Edit</a>
+            <form method="post" action="{% url 'bookkeeping:transaction_delete' item.pk %}" class="inline-form">
+              {% csrf_token %}
+              <button type="submit" class="btn danger small" onclick="return confirm('Delete this transaction?');">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <div class="pager">
+    {% if page.has_previous %}<a href="?{{ request.GET.urlencode }}&page={{ page.previous_page_number }}">← Previous</a>{% endif %}
+    <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?{{ request.GET.urlencode }}&page={{ page.next_page_number }}">Next →</a>{% endif %}
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty-state">
+    <div class="stat-icon"><svg class="ico"><use href="#i-swap" /></svg></div>
+    <h2>No transactions found</h2>
+    <p>{% if query or type_filter or category_filter or date_from or date_to %}Try changing your filters, or clear them to see all records.{% else %}Add your first income or expense record to start tracking your business finances.{% endif %}</p>
+    {% if not query and not type_filter and not category_filter and not date_from and not date_to %}<a class="btn" href="{% url 'bookkeeping:transaction_create' %}">Add your first transaction</a>{% else %}<a class="btn secondary" href="{% url 'bookkeeping:transaction_list' %}">Clear filters</a>{% endif %}
+    {% if not categories %}<p class="help">You need an income or expense category before recording a transaction. <a href="{% url 'bookkeeping:category_create' %}">Create a category</a>.</p>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

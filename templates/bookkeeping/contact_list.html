@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{{ heading }}</h1><p>Manage contacts that can be linked to your transactions.</p></div>
+  <a class="btn" href="{% url 'bookkeeping:contact_create' kind %}">+ Add {{ contact_label|lower }}</a>
+</div>
+<div class="card">
+  {% if contacts %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for contact in contacts %}
+        <tr>
+          <td><strong>{{ contact.name }}</strong></td><td>{{ contact.email|default:"—" }}</td><td>{{ contact.phone|default:"—" }}</td><td>{{ contact.address|default:"—" }}</td>
+          <td class="nowrap">
+            <a class="btn secondary small" href="{% url 'bookkeeping:contact_update' kind contact.pk %}">Edit</a>
+            <form method="post" action="{% url 'bookkeeping:contact_delete' kind contact.pk %}" class="inline-form">
+              {% csrf_token %}
+              <button class="btn danger small" type="submit" onclick="return confirm('Delete this contact? A contact linked to a transaction cannot be deleted.');">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="stat-icon"><svg class="ico"><use href="#i-users" /></svg></div>
+    <h2>No {{ heading|lower }} yet</h2>
+    <p>You can add a contact here and link it to an income or expense transaction later.</p>
+    <a class="btn" href="{% url 'bookkeeping:contact_create' kind %}">Add {{ contact_label|lower }}</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
