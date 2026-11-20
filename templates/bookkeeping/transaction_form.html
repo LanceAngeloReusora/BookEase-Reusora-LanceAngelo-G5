@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<div class="auth-wrap wide card">
+  <h1>{{ heading }}</h1>
+  <p class="sub">Enter the transaction details. Amounts are recorded in Philippine Peso (PHP).</p>
+
+  {% if not form.fields.category.queryset.exists %}
+  <div class="alert info">You do not have any categories yet. <a href="{% url 'bookkeeping:category_create' %}">Create a category</a> before saving a transaction.</div>
+  {% endif %}
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<ul class="errors non-field">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+    {% for field in form %}{% include 'accounts/_field.html' %}{% endfor %}
+    <div class="form-actions">
+      <button type="submit" class="btn" {% if not form.fields.category.queryset.exists %}disabled{% endif %}>{{ submit_label }}</button>
+      <a class="btn secondary" href="{% url 'bookkeeping:transaction_list' %}">Cancel</a>
+    </div>
+  </form>
+  <p class="help" style="margin-top:16px">Business rule: income transactions may be linked to a customer; expense transactions may be linked to a supplier.</p>
+</div>
+{% endblock %}

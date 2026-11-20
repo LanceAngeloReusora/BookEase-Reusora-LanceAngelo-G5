@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Categories{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Categories</h1><p>Organize transactions using your own income and expense categories.</p></div>
+  <a class="btn" href="{% url 'bookkeeping:category_create' %}">+ Add category</a>
+</div>
+<div class="card">
+  {% if categories %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Category</th><th>Type</th><th>Transactions</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for category in categories %}
+        <tr>
+          <td><strong>{{ category.name }}</strong></td>
+          <td>{% if category.type == 'INCOME' %}<span class="badge">Income</span>{% else %}<span class="badge off">Expense</span>{% endif %}</td>
+          <td>{{ category.transactions.count }}</td>
+          <td class="nowrap">
+            <a class="btn secondary small" href="{% url 'bookkeeping:category_update' category.pk %}">Edit</a>
+            <form method="post" action="{% url 'bookkeeping:category_delete' category.pk %}" class="inline-form">
+              {% csrf_token %}
+              <button class="btn danger small" type="submit" onclick="return confirm('Delete this category? Categories used by transactions cannot be deleted.');">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="stat-icon"><svg class="ico"><use href="#i-tag" /></svg></div>
+    <h2>No categories yet</h2>
+    <p>Create at least one income category and one expense category before recording transactions.</p>
+    <a class="btn" href="{% url 'bookkeeping:category_create' %}">Create your first category</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
