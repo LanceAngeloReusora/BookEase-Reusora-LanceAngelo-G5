@@ -52,7 +52,15 @@ Important SDD rules enforced by the feature include positive amounts, valid INCO
    cp .env.example .env
    ```
 
-   For a local database, create an empty database named `bookease` and use its host, port, username, and password. For Supabase, use the connection values shown in Project Settings → Database and set `DB_SSLMODE=require`.
+   **For Supabase (recommended):**
+
+   1. Open your Supabase project and click **Connect**.
+   2. Choose **Session pooler** and copy its host and username exactly. This mode is suitable for local networks that only support IPv4.
+   3. In `.env`, set `DB_NAME=postgres`, `DB_USER` to the session-pooler username (usually `postgres.<PROJECT-REF>`), `DB_HOST` to the pooler host, `DB_PORT=5432`, your database password, and `DB_SSLMODE=require`.
+
+   Supabase direct connections use host `db.<PROJECT-REF>.supabase.co`, username `postgres`, and port `5432`; they require IPv6 unless your project has the IPv4 add-on. Use the exact connection details shown by Supabase rather than guessing the pooler hostname or username.
+
+   **For a local PostgreSQL database instead:** set `DB_NAME=bookease`, `DB_USER`, `DB_PASSWORD`, `DB_HOST=localhost`, and `DB_PORT=5432`.
 
 5. Apply the migrations and create an administrator account:
 
