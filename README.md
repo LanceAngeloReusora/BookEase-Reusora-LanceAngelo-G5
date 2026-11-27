@@ -1,22 +1,41 @@
 # BookEase: Automated Bookkeeping Management System
 
-CSIT327 – Information Management 2. BookEase is a Django bookkeeping system for small businesses. It uses PostgreSQL (including Supabase PostgreSQL) for persistent data and Django templates for the user interface.
+**CSIT327 – Information Management 2**
 
-## Project Development 2 core feature
+BookEase is a Django-based bookkeeping system designed for small businesses. It uses PostgreSQL (including Supabase PostgreSQL) for persistent data storage and Django templates for its user interface.
 
-The core feature implemented in this increment is **income and expense transaction management (F-03)** from the approved SDD.
+## Project Development 2 – Core Feature
+
+The core feature implemented in this increment is **Income and Expense Transaction Management (F-03)** from the approved Software Design Document (SDD).
 
 A signed-in Business Owner can:
 
 - Create, view, search, and filter income and expense transactions.
 - Edit or delete their own transaction records.
-- Assign an owner-specific category and optionally link an income transaction to a customer or an expense transaction to a supplier.
-- View total income, total expenses, and net income on the owner dashboard, including totals for a selected date range.
+- Assign owner-specific categories.
+- Optionally link income transactions to customers and expense transactions to suppliers.
+- View total income, total expenses, and net income on the owner dashboard.
+- View transaction totals for a selected date range.
 - Manage their own income/expense categories and customer/supplier contact records.
 
-Transactions and their supporting categories/contacts are saved in PostgreSQL tables. A transaction is linked to its owner through a `ForeignKey` to the custom User model. Owner-facing views query only the signed-in owner's records. Administrators retain the administration dashboard and account/activity-log tools but cannot access owner bookkeeping pages or bookkeeping models in Django Admin.
+Transactions and their supporting categories and contacts are saved in PostgreSQL tables. Each transaction is linked to its owner through a ForeignKey to the custom User model.
 
-Important SDD rules enforced by the feature include positive amounts, valid INCOME/EXPENSE types, category/type matching, no future transaction dates, same-owner category/contact relationships, income/customer and expense/supplier linking rules, unique owner-scoped category/contact names, and prevention of deleting categories or contacts referenced by transactions. Important create/update/delete actions are added to the activity log.
+Owner-facing views query only the signed-in owner's records. Administrators retain access to the administration dashboard and account/activity-log tools but cannot access owner bookkeeping pages or bookkeeping models through Django Admin.
+
+### Important Business Rules
+
+The system enforces the following rules:
+
+- Transaction amounts must be positive.
+- Transaction types must be valid INCOME or EXPENSE values.
+- Transaction dates cannot be in the future.
+- Categories must match the transaction type.
+- Categories and contacts must belong to the same owner.
+- Income transactions may be linked to customers.
+- Expense transactions may be linked to suppliers.
+- Category and contact names must be unique per owner, regardless of letter case.
+- Referenced categories and contacts cannot be accidentally deleted.
+- Important create, update, and delete actions are recorded in the activity log.
 
 ## Requirements
 
@@ -24,94 +43,324 @@ Important SDD rules enforced by the feature include positive amounts, valid INCO
 - PostgreSQL 13 or newer, or a Supabase PostgreSQL database
 - Dependencies listed in `requirements.txt`
 
-## Setup
+## Installation and Setup
 
 ### Windows PowerShell
 
-1. Open a terminal in the folder containing `manage.py`.
-2. Create and activate the virtual environment:
+1. Open PowerShell in the project folder containing `manage.py`.
+
+2. Create a virtual environment:
 
    ```powershell
    python -m venv .venv
+   ```
+
+3. Activate the virtual environment:
+
+   ```powershell
    .\.venv\Scripts\Activate.ps1
    ```
 
-3. Install dependencies inside that environment:
+4. Upgrade pip:
 
    ```powershell
+   python -m pip install --upgrade pip
+   ```
+
+5. Install the project dependencies:
+
+   ```powershell
+   python -m pip install -r requirements.txt
+   ```
+
+6. Configure environment variables. Create a local `.env` file from the example if you do not already have one:
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+   Open the `.env` file:
+
+   ```powershell
+   notepad .env
+   ```
+
+   Configure your own Django `SECRET_KEY`, database password, and other required settings.
+
+   The `.env.example` file contains the sample Supabase Session Pooler configuration. Enter your own database credentials.
+
+   **Never commit your private `.env` file to GitHub.**
+
+7. Apply database migrations:
+
+   ```powershell
+   python manage.py migrate
+   ```
+
+8. Start the development server:
+
+   ```powershell
+   python manage.py runserver
+   ```
+
+9. Open the application in your browser:
+
+   http://127.0.0.1:8000/
+
+### macOS / Linux
+
+1. Create a virtual environment:
+
+   ```bash
+   python3 -m venv .venv
+   ```
+
+2. Activate it:
+
+   ```bash
+   source .venv/bin/activate
+   ```
+
+3. Install dependencies:
+
+   ```bash
    python -m pip install --upgrade pip
    python -m pip install -r requirements.txt
    ```
 
-4. Configure the environment. The source ZIP and public GitHub repository intentionally do not include the private `.env` file. Create your local copy from the example:
+4. Create the environment file if it does not already exist:
 
-   ```powershell
-   Copy-Item .env.example .env
-   notepad .env
+   ```bash
+   cp .env.example .env
    ```
 
-   The Supabase Session Pooler host, username, database, port `5432`, and SSL mode `require` are prefilled in `.env.example`. Enter your own Supabase database password and generate a new Django `SECRET_KEY` before running the app. Keep `.env` private and do not commit it.
+5. Configure your `SECRET_KEY` and database credentials in `.env`.
 
-5. Apply database migrations and start the server:
+6. Apply migrations:
 
-   ```powershell
+   ```bash
    python manage.py migrate
+   ```
+
+7. Start the development server:
+
+   ```bash
    python manage.py runserver
    ```
 
-Open `http://127.0.0.1:8000/`.
+Open http://127.0.0.1:8000/ in your browser.
+
+## Roles and Main Routes
+
+### Business Owner (OWNER)
+
+Business Owners can access:
+
+- `/dashboard/owner/` – Owner dashboard
+- `/transactions/` – Income and expense transactions
+- `/categories/` – Category management
+- `/contacts/customers/` – Customer management
+- `/contacts/suppliers/` – Supplier management
+- `/profile/` – User profile
+
+### Administrator (ADMIN)
+
+Administrators can access:
+
+- `/dashboard/admin/` – Administration dashboard
+- User management
+- System activity log
+
+The `/dashboard/` route redirects authenticated accounts to their appropriate role dashboard.
+
+Administrators are not allowed to access the Business Owner bookkeeping pages.
+
+## Data and Business Logic
+
+The project is organized into the following Django applications:
+
+- `accounts` – Custom User model, authentication, registration, profile views, and activity logs.
+- `bookkeeping` – Category, Customer, Supplier, and Transaction models, forms, owner-only views, and templates.
+- `config` – Django project settings, URL configuration, and custom error handlers.
+- `templates` – Application templates and custom error pages.
+- `static` – Static CSS and other front-end assets.
+
+### Database Migrations
+
+- `bookkeeping/migrations/0001_initial.py` creates the bookkeeping tables and initial PostgreSQL constraints, including the transaction/category composite foreign key for category/type matching.
+- `accounts/migrations/0002_pd3_hardening.py` and `bookkeeping/migrations/0002_pd3_hardening.py` apply PD3 relationship-protection, case-insensitive uniqueness, amount-validation, and query-index changes.
+
+The `.env` file is ignored by Git. Database passwords and Django secret keys must never be committed.
+
+## Project Development 3 – Hardening of Core Features
+
+No new user-facing features are introduced in PD3. This increment focuses on making the existing account and transaction workflows reliable, secure, and properly tested.
+
+### 1. Validation and Error Handling
+
+- Server-side validation is implemented for core feature forms.
+- Positive transaction amounts are enforced.
+- Future transaction dates are rejected.
+- Category/type matching and owner relationships are validated.
+- Success and error messages provide feedback to users.
+- Custom 403, 404, and 500 error pages are configured.
+- Invalid object lookups use appropriate 404 handling.
+- Debug details are not displayed in the public error templates.
+
+### 2. Security and Access Control
+
+- Owner-role checks are enforced inside views.
+- Bookkeeping querysets and detail lookups are scoped to the signed-in owner.
+- Users cannot access another owner's transaction records by changing the ID in the URL.
+- CSRF tokens are included in POST forms.
+- Delete endpoints accept POST requests only.
+- Django ORM is used instead of raw SQL constructed from user input.
+- User-provided input is not rendered using unsafe template output.
+- `SECRET_KEY` and `DEBUG` are controlled through environment variables.
+
+### 3. Data Integrity and Database
+
+- Model constraints and validators enforce valid data.
+- Case-insensitive duplicate category and contact names are prevented through database constraints and form validation.
+- Related owner, category, and contact records use appropriate `PROTECT` behavior.
+- Multi-step database operations and activity logging use `transaction.atomic()`.
+- Successful POST operations redirect using the Post/Redirect/Get pattern.
+- Related objects use `select_related()` and `prefetch_related()` where needed.
+- Delete actions require confirmation before submission.
+
+### 4. Automated Testing
+
+The project contains automated Django tests in:
+
+- `bookkeeping/tests.py`
+- `accounts/tests.py`
+
+The test suite covers:
+
+- Valid transaction creation.
+- Invalid transaction amounts.
+- Login requirements.
+- Role-based access restrictions.
+- Cross-owner transaction access denial.
+- CSRF protection.
+- POST-only delete restrictions.
+- Missing transaction IDs.
+- Duplicate category and contact names.
+- Transaction create, update, and delete operations.
+- Account registration and authentication.
+- User profiles and password changes.
+- Administrator access and database constraints.
+
+## How to Run the Automated Tests
+
+Run the following commands whenever you want to execute the complete automated test suite.
+
+### Windows PowerShell
+
+1. Open PowerShell in the BookEase project directory (the folder containing `manage.py`).
+
+2. Activate the virtual environment:
+
+   ```powershell
+   .\.venv\Scripts\Activate.ps1
+   ```
+
+3. Execute all Django tests:
+
+   ```powershell
+   python manage.py test
+   ```
 
 ### macOS / Linux
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-cp .env.example .env  # only if you do not already have your private .env
-# Fill in SECRET_KEY and DB_PASSWORD in .env
-python manage.py migrate
-python manage.py runserver
+1. Open a terminal in the BookEase project directory.
+
+2. Activate the virtual environment:
+
+   ```bash
+   source .venv/bin/activate
+   ```
+
+3. Execute all Django tests:
+
+   ```bash
+   python manage.py test
+   ```
+
+### Expected Test Output
+
+When all tests pass, Django displays output similar to:
+
+```text
+Found 82 test(s).
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+..................................................................................
+----------------------------------------------------------------------
+Ran 82 tests
+
+OK
+Destroying test database for alias 'default'...
 ```
 
-**Security:** `.env` is listed in `.gitignore` and must never be committed. It contains private credentials. The public repository should contain `.env.example` only.
+### Latest Verified Test Results
 
-## Roles and main routes
+The PD3 automated test suite was executed locally with the following results:
 
-- **OWNER (Business Owner):** `/dashboard/owner/`, `/transactions/`, `/categories/`, `/contacts/customers/`, `/contacts/suppliers/`, and `/profile/`.
-- **ADMIN (Administrator):** `/dashboard/admin/`, user management, and the system activity log.
+| Test Result | Status |
+|---|---|
+| Total tests discovered | 82 |
+| Tests passed | 82 |
+| Tests failed | 0 |
+| Django system checks | No issues |
+| Overall result | PASSED |
 
-`/dashboard/` redirects each authenticated account to its role dashboard. An Administrator is not allowed to open the Owner bookkeeping pages.
+Django automatically creates an isolated test database, executes the tests, and destroys the test database afterward.
 
-## Data and business logic
+The test configuration uses an isolated SQLite test database. This prevents the automated test run from modifying the live Supabase database. Normal commands such as `migrate` and `runserver` continue to use the PostgreSQL/Supabase settings configured in `.env`.
 
-- `accounts` contains the custom `User` model, authentication/profile views, and `activity_logs`.
-- `bookkeeping` contains `Category`, `Customer`, `Supplier`, and `Transaction` models, forms, owner-only views, and templates.
-- `bookkeeping/migrations/0001_initial.py` creates the bookkeeping tables and PostgreSQL constraints, including the transaction/category composite foreign key for category/type matching.
-- `accounts/migrations/0002_pd3_hardening.py` and `bookkeeping/migrations/0002_pd3_hardening.py` apply the PD3 relationship-protection, case-insensitive uniqueness, amount-validation, and query-index changes.
-- `.env` is ignored by Git. Do not commit database passwords or Django secret keys.
+## Environment and Security Configuration
 
-## Project Development 3 hardening and tests
+The source ZIP and public GitHub repository intentionally exclude the private `.env` file.
 
-No new user-facing features are introduced in PD3. This increment hardens the existing account and transaction workflows:
+The repository includes `.env.example` as a reference for environment configuration.
 
-- Owner-role checks remain enforced in views; all bookkeeping querysets and detail lookups are scoped to the signed-in owner.
-- Transaction, category, customer, and supplier create/update/delete operations use atomic database transactions when an activity-log entry is written.
-- Delete endpoints accept POST only, include CSRF tokens, and the UI asks for confirmation before deletion.
-- Case-insensitive duplicate category/contact names are prevented by database unique constraints as well as form validation.
-- Related owner/category/contact records use `PROTECT` so referenced or owned data cannot be accidentally deleted.
-- Generic 403, 404, and 500 pages are configured for non-debug deployments; debug details are not rendered in the public error templates.
-- The form layer validates required values, email formats, positive amounts, transaction dates, category/type matching, and owner relationships.
+Security requirements:
 
-Run the full automated suite:
+- Keep `.env` in `.gitignore`.
+- Never commit database passwords.
+- Never commit Django secret keys.
+- Generate a new `SECRET_KEY` for your local environment.
+- Keep `DEBUG=False` for non-debug deployments.
+- Configure `ALLOWED_HOSTS` for the intended deployment.
+- For HTTPS deployments, configure:
 
-```bash
-python manage.py test
-```
+  ```env
+  SESSION_COOKIE_SECURE=True
+  CSRF_COOKIE_SECURE=True
+  SECURE_SSL_REDIRECT=True
+  ```
 
-When `manage.py test` runs, Django automatically uses an isolated in-memory SQLite test database and a test-only secret key. This avoids opening, modifying, or trying to create a test database on your live Supabase project. Normal commands such as `migrate` and `runserver` continue to use the PostgreSQL/Supabase settings from `.env`. The supplied `.env.example` is configured for local HTTP; for an HTTPS deployment, set `SESSION_COOKIE_SECURE=True`, `CSRF_COOKIE_SECURE=True`, and `SECURE_SSL_REDIRECT=True`.
+The supplied `.env.example` is configured for local HTTP development.
 
-The bookkeeping suite includes valid/invalid input, authentication required, role checks, cross-owner access denial, CSRF enforcement, POST-only deletion, missing IDs, duplicate names, and transaction CRUD tests. The account suite covers registration, login/logout, roles, profile/password changes, admin access, and database constraints.
+## Current Increment Boundary
 
-## Current increment boundary
+Receipt upload/linking and detailed financial report generation are not included in this core-feature increment. These items remain deferred to a future increment.
 
-Receipt upload/linking and detailed financial report generation are not included in this core-feature increment. The existing registration, login/logout, role dashboards, and profile features remain part of the project.
+The existing standard features from Project Development 1 remain part of the system:
+
+- Account Registration
+- Login and Logout
+- Role-Based User Dashboard
+- User Profile
+
+## Project Repository
+
+**System:** BookEase – Automated Bookkeeping Management System
+
+**Core Feature:** Income and Expense Transaction Management (F-03)
+
+**GitHub Repository:**  
+https://github.com/LanceAngeloReusora/BookEase-Reusora-LanceAngelo-G5
+
+**Project Development:** 3 – Hardening of Core Features
