@@ -1,0 +1,24 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>500 - Something went wrong | BookEase</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="guest">
+  <div class="guest-shell">
+    <main class="guest-main">
+      <div class="container">
+        <section class="card empty-state" role="status">
+          <h1>500</h1>
+          <h2>Something went wrong</h2>
+          <p>BookEase could not complete your request. No changes were confirmed. Please try again later.</p>
+          <a class="btn" href="/">Return to BookEase</a>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

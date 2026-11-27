@@ -5,6 +5,7 @@ All secrets and database credentials are read from a .env file
 (see .env.example). Never commit the real .env file.
 """
 import os
+import sys
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -25,7 +26,13 @@ def env_list(name, default=""):
 
 # --- Core -------------------------------------------------------------------
 
+# `manage.py test` is intentionally isolated from the live Supabase database.
+# This lets contributors run the full suite without creating/dropping a remote DB.
+RUNNING_TESTS = len(sys.argv) > 1 and sys.argv[1] in {"test", "testserver"}
+
 SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY and RUNNING_TESTS:
+    SECRET_KEY = "bookease-test-only-secret-key-do-not-use-outside-tests"
 if not SECRET_KEY:
     raise ImproperlyConfigured(
         "SECRET_KEY is not set. Copy .env.example to .env and fill it in. "
@@ -83,21 +90,38 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 
-# --- Database: PostgreSQL (local PostgreSQL or Supabase PostgreSQL) ---------
-# SQLite is intentionally not configured.
+# --- Database: Supabase/PostgreSQL for app runs, isolated SQLite for tests --
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME", "postgres"),
-        "USER": os.environ.get("DB_USER", "postgres"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-        "HOST": os.environ.get("DB_HOST", "localhost"),
-        "PORT": os.environ.get("DB_PORT", "5432"),
-        # Use DB_SSLMODE=require for Supabase.
-        "OPTIONS": {"sslmode": os.environ.get("DB_SSLMODE", "require")},
+if RUNNING_TESTS:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+            "TEST": {"NAME": ":memory:"},
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("DB_NAME", "postgres"),
+            "USER": os.environ.get("DB_USER", "postgres"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "5432"),
+            # Supabase Session Pooler requires TLS.
+            "OPTIONS": {"sslmode": os.environ.get("DB_SSLMODE", "require")},
+        }
+    }
+
+# Safe defaults for non-debug deployments; localhost development can override
+# these values in the private .env file.
+SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", not DEBUG)
+CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", not DEBUG)
+SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", False)
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
 
 
 # --- Authentication ---------------------------------------------------------

@@ -1,0 +1,10 @@
+BookEase PD3 source patch
+
+This patch is built against the project archive you uploaded as bookease (2).zip.
+Extract this ZIP directly into your existing project root: C:\Users\l11x09w31\Documents\bookease
+Allow Windows to replace matching source files and create the new files.
+
+This patch does NOT include or replace .env, .venv, or .git. Keep those from your existing project.
+After applying, run: python manage.py check
+Then: python manage.py makemigrations --check --dry-run
+Then: python manage.py test
