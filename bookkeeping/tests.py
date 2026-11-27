@@ -1,7 +1,7 @@
 from datetime import timedelta
 from decimal import Decimal
 
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -198,6 +198,97 @@ class TransactionWorkflowTests(TestCase):
         self.assertContains(response, "₱1000.00")
         self.assertContains(response, "₱250.00")
         self.assertContains(response, "₱750.00")
+
+    def test_delete_endpoint_rejects_get(self):
+        item = Transaction.objects.create(
+            user=self.owner, category=self.income_category, type="INCOME",
+            amount=Decimal("20.00"), transaction_date=timezone.localdate(),
+        )
+        response = self.client.get(reverse("bookkeeping:transaction_delete", args=[item.pk]))
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(Transaction.objects.filter(pk=item.pk).exists())
+
+    def test_missing_transaction_id_returns_404(self):
+        response = self.client.get(reverse("bookkeeping:transaction_update", args=[999999]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_invalid_contact_kind_returns_404(self):
+        response = self.client.get(reverse("bookkeeping:contact_list", kwargs={"kind": "staff"}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_csrf_is_required_for_transaction_create(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.owner)
+        response = csrf_client.post(
+            reverse("bookkeeping:transaction_create"), self.transaction_data()
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Transaction.objects.filter(user=self.owner).exists())
+
+    def test_transaction_list_is_scoped_to_current_owner(self):
+        Transaction.objects.create(
+            user=self.other_owner, category=self.other_category, type="INCOME",
+            amount=Decimal("55.00"), transaction_date=timezone.localdate(),
+            description="Private other-owner entry",
+        )
+        Transaction.objects.create(
+            user=self.owner, category=self.income_category, type="INCOME",
+            amount=Decimal("12.00"), transaction_date=timezone.localdate(),
+            description="My own entry",
+        )
+        response = self.client.get(reverse("bookkeeping:transaction_list"))
+        self.assertContains(response, "My own entry")
+        self.assertNotContains(response, "Private other-owner entry")
+
+    def test_duplicate_category_name_case_insensitive_is_rejected(self):
+        response = self.client.post(
+            reverse("bookkeeping:category_create"), {"name": "sales", "type": "INCOME"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("name", response.context["form"].errors)
+        self.assertEqual(Category.objects.filter(user=self.owner, type="INCOME").count(), 1)
+
+    def test_duplicate_contact_name_case_insensitive_is_rejected(self):
+        Customer.objects.create(user=self.owner, name="Walk-in Customer")
+        response = self.client.post(
+            reverse("bookkeeping:contact_create", kwargs={"kind": "customers"}),
+            {"name": "walk-in customer", "email": "", "phone": "", "address": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("name", response.context["form"].errors)
+        self.assertEqual(Customer.objects.filter(user=self.owner).count(), 1)
+
+    def test_database_prevents_case_insensitive_duplicate_category(self):
+        from django.db import IntegrityError, transaction as db_transaction
+
+        with self.assertRaises(IntegrityError), db_transaction.atomic():
+            Category.objects.create(user=self.owner, name="sales", type="INCOME")
+
+    def test_transaction_delete_requires_confirmation_in_ui(self):
+        Transaction.objects.create(
+            user=self.owner, category=self.income_category, type="INCOME",
+            amount=Decimal("20.00"), transaction_date=timezone.localdate(),
+        )
+        response = self.client.get(reverse("bookkeeping:transaction_list"))
+        self.assertContains(response, "confirm('Delete this transaction?')")
+
+    def test_owner_cannot_update_another_owners_category_or_contact(self):
+        foreign_customer = Customer.objects.create(user=self.other_owner, name="Other Customer")
+        self.assertEqual(
+            self.client.get(reverse("bookkeeping:category_update", args=[self.other_category.pk])).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.get(reverse("bookkeeping:contact_update", kwargs={"kind": "customers", "pk": foreign_customer.pk})).status_code,
+            404,
+        )
+
+    def test_invalid_transaction_form_does_not_persist(self):
+        invalid = self.transaction_data(amount="not-a-number")
+        response = self.client.post(reverse("bookkeeping:transaction_create"), invalid)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("amount", response.context["form"].errors)
+        self.assertFalse(Transaction.objects.filter(user=self.owner).exists())
 
 
 class BookkeepingAccessTests(TestCase):

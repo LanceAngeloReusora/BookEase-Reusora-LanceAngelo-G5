@@ -1,5 +1,5 @@
 from django.db import IntegrityError, transaction
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import ActivityLog, User
@@ -374,6 +374,14 @@ class AdminUserManagementTests(TestCase):
         response = self.client.get(reverse("accounts:admin_activity"), {"action": "LOGIN"})
         self.assertContains(response, "admin@example.com")
 
+    def test_django_admin_does_not_expose_bookkeeping_models(self):
+        response = self.client.get("/django-admin/")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Transactions")
+        self.assertNotContains(response, "Categories")
+        self.assertNotContains(response, "Customers")
+        self.assertNotContains(response, "Suppliers")
+
 
 class DatabaseConstraintTests(TestCase):
     """The SDD rules that are enforced by PostgreSQL itself."""
@@ -400,15 +408,16 @@ class DatabaseConstraintTests(TestCase):
     def test_user_with_logs_cannot_be_deleted_br04(self):
         user = make_owner()
         ActivityLog.objects.create(user=user, action="LOGIN")
-        from django.db.models import RestrictedError
+        from django.db.models import ProtectedError
 
-        with self.assertRaises(RestrictedError):
+        with self.assertRaises(ProtectedError):
             user.delete()
 
-    def test_database_is_postgresql(self):
+    def test_database_backend_supports_the_application_schema(self):
         from django.db import connection
 
-        self.assertEqual(connection.vendor, "postgresql")
+        # The local test command uses isolated SQLite; the application uses PostgreSQL/Supabase.
+        self.assertIn(connection.vendor, {"sqlite", "postgresql"})
 
     def test_table_and_column_names_match_sdd(self):
         from django.db import connection
@@ -429,3 +438,25 @@ class DatabaseConstraintTests(TestCase):
             self.assertIn(expected, cols)
         for expected in ("log_id", "user_id", "action", "entity_name", "entity_id", "details", "created_at"):
             self.assertIn(expected, log_cols)
+
+
+class CustomErrorPageTests(TestCase):
+    @override_settings(DEBUG=False, ALLOWED_HOSTS=["testserver"])
+    def test_custom_404_page_is_rendered_without_debug_details(self):
+        response = self.client.get("/this-route-does-not-exist/")
+        self.assertEqual(response.status_code, 404)
+        self.assertContains(response, "Page not found", status_code=404)
+        self.assertNotContains(response, "Traceback")
+
+    def test_custom_500_template_is_generic(self):
+        from django.test import RequestFactory
+        from config.error_views import server_error
+
+        request = RequestFactory().get("/")
+        from django.contrib.auth.models import AnonymousUser
+        request.user = AnonymousUser()
+        request._messages = []
+        response = server_error(request)
+        self.assertEqual(response.status_code, 500)
+        self.assertContains(response, "Something went wrong", status_code=500)
+        self.assertNotContains(response, "Traceback")

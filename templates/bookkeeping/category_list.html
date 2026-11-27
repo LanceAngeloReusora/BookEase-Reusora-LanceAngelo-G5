@@ -15,7 +15,7 @@
         <tr>
           <td><strong>{{ category.name }}</strong></td>
           <td>{% if category.type == 'INCOME' %}<span class="badge">Income</span>{% else %}<span class="badge off">Expense</span>{% endif %}</td>
-          <td>{{ category.transactions.count }}</td>
+          <td>{{ category.transaction_count }}</td>
           <td class="nowrap">
             <a class="btn secondary small" href="{% url 'bookkeeping:category_update' category.pk %}">Edit</a>
             <form method="post" action="{% url 'bookkeeping:category_delete' category.pk %}" class="inline-form">

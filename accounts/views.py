@@ -3,11 +3,12 @@ from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.core.paginator import Paginator
+from django.db import IntegrityError, transaction as db_transaction
 from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.dateparse import parse_date
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from bookkeeping.models import Transaction
 
@@ -24,6 +25,7 @@ from .utils import log_activity
 
 # --- Registration / login / logout ------------------------------------------
 
+@require_http_methods(["GET", "POST"])
 def register(request):
     if request.user.is_authenticated:
         return redirect("accounts:dashboard")
@@ -31,12 +33,17 @@ def register(request):
     if request.method == "POST":
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            log_activity(
-                user, ActivityLog.Action.REGISTER, "users", user.pk, "Registered a new account"
-            )
-            messages.success(request, "Account created successfully. You can now log in.")
-            return redirect("accounts:login")
+            try:
+                with db_transaction.atomic():
+                    user = form.save()
+                    log_activity(
+                        user, ActivityLog.Action.REGISTER, "users", user.pk, "Registered a new account"
+                    )
+            except IntegrityError:
+                form.add_error("email", "An account with this email already exists.")
+            else:
+                messages.success(request, "Account created successfully. You can now log in.")
+                return redirect("accounts:login")
         messages.error(request, "Registration failed. Please fix the errors below.")
     else:
         form = RegistrationForm()
@@ -68,6 +75,7 @@ def logout_view(request):
 # --- Role-based dashboards --------------------------------------------------
 
 @login_required
+@require_GET
 def dashboard(request):
     """Send each user to the dashboard that matches their role."""
     if request.user.is_admin:
@@ -76,6 +84,7 @@ def dashboard(request):
 
 
 @owner_required
+@require_GET
 def owner_dashboard(request):
     """Owner dashboard totals are calculated from the owner's saved transactions."""
     transactions = Transaction.objects.filter(user=request.user)
@@ -98,7 +107,7 @@ def owner_dashboard(request):
 
     income_total = transactions.filter(type=Transaction.Type.INCOME).aggregate(total=Sum("amount"))["total"] or 0
     expense_total = transactions.filter(type=Transaction.Type.EXPENSE).aggregate(total=Sum("amount"))["total"] or 0
-    recent_transactions = Transaction.objects.filter(user=request.user).select_related("category")[:5]
+    recent_transactions = Transaction.objects.filter(user=request.user).select_related("category", "customer", "supplier")[:5]
     recent = ActivityLog.objects.filter(user=request.user)[:8]
     return render(
         request,
@@ -116,6 +125,7 @@ def owner_dashboard(request):
 
 
 @admin_required
+@require_GET
 def admin_dashboard(request):
     users = User.objects.all()
     context = {
@@ -130,6 +140,7 @@ def admin_dashboard(request):
 
 
 @admin_required
+@require_GET
 def admin_users(request):
     query = request.GET.get("q", "").strip()
     users = User.objects.order_by("-created_at")
@@ -152,12 +163,13 @@ def admin_user_toggle(request, pk):
         messages.error(request, "You cannot deactivate your own account.")
         return redirect("accounts:admin_users")
 
-    target.is_active = not target.is_active
-    target.save(update_fields=["is_active"])
-    state = "activated" if target.is_active else "deactivated"
-    log_activity(
-        request.user, ActivityLog.Action.UPDATE, "users", target.pk, f"Account {state}: {target.email}"
-    )
+    with db_transaction.atomic():
+        target.is_active = not target.is_active
+        target.save(update_fields=["is_active"])
+        state = "activated" if target.is_active else "deactivated"
+        log_activity(
+            request.user, ActivityLog.Action.UPDATE, "users", target.pk, f"Account {state}: {target.email}"
+        )
     messages.success(request, f"{target.email} has been {state}.")
     next_url = request.POST.get("next", "")
     if next_url and url_has_allowed_host_and_scheme(
@@ -168,6 +180,7 @@ def admin_user_toggle(request, pk):
 
 
 @admin_required
+@require_GET
 def admin_activity(request):
     logs = ActivityLog.objects.select_related("user")
     action = request.GET.get("action", "").strip().upper()
@@ -186,21 +199,28 @@ def admin_activity(request):
 # --- Profile (always the logged-in user's own record) -----------------------
 
 @login_required
+@require_GET
 def profile(request):
     return render(request, "accounts/profile.html", {"profile_user": request.user})
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def profile_edit(request):
     if request.method == "POST":
         form = ProfileForm(request.POST, instance=request.user)
         if form.is_valid():
-            form.save()
-            log_activity(
-                request.user, ActivityLog.Action.UPDATE, "users", request.user.pk, "Updated profile"
-            )
-            messages.success(request, "Your profile was updated successfully.")
-            return redirect("accounts:profile")
+            try:
+                with db_transaction.atomic():
+                    form.save()
+                    log_activity(
+                        request.user, ActivityLog.Action.UPDATE, "users", request.user.pk, "Updated profile"
+                    )
+            except IntegrityError:
+                form.add_error("email", "Another account already uses this email.")
+            else:
+                messages.success(request, "Your profile was updated successfully.")
+                return redirect("accounts:profile")
         messages.error(request, "Could not update your profile. Please fix the errors below.")
     else:
         form = ProfileForm(instance=request.user)
@@ -208,13 +228,15 @@ def profile_edit(request):
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def password_change(request):
     if request.method == "POST":
         form = StyledPasswordChangeForm(request.user, request.POST)
         if form.is_valid():
-            user = form.save()
+            with db_transaction.atomic():
+                user = form.save()
+                log_activity(user, ActivityLog.Action.UPDATE, "users", user.pk, "Changed password")
             update_session_auth_hash(request, user)  # keep the user logged in
-            log_activity(user, ActivityLog.Action.UPDATE, "users", user.pk, "Changed password")
             messages.success(request, "Your password was changed successfully.")
             return redirect("accounts:profile")
         messages.error(request, "Could not change your password. Please fix the errors below.")

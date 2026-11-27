@@ -1,7 +1,11 @@
 from django.conf import settings
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.utils import timezone
 
 
@@ -15,7 +19,7 @@ class Category(models.Model):
     category_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.RESTRICT,
+        on_delete=models.PROTECT,
         related_name="categories",
         db_column="user_id",
     )
@@ -32,7 +36,7 @@ class Category(models.Model):
                 name="categories_type_check",
             ),
             models.UniqueConstraint(
-                fields=["user", "name", "type"], name="categories_user_name_type_uniq"
+                Lower("name"), "user", "type", name="categories_user_lower_name_type_uniq"
             ),
             models.UniqueConstraint(
                 fields=["category_id", "type"], name="categories_id_type_uniq"
@@ -55,7 +59,7 @@ class Customer(models.Model):
     customer_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.RESTRICT,
+        on_delete=models.PROTECT,
         related_name="customers",
         db_column="user_id",
     )
@@ -69,7 +73,9 @@ class Customer(models.Model):
         db_table = "customers"
         ordering = ["name"]
         constraints = [
-            models.UniqueConstraint(fields=["user", "name"], name="customers_user_name_uniq")
+            models.UniqueConstraint(
+                Lower("name"), "user", name="customers_user_lower_name_uniq"
+            )
         ]
 
     def clean(self):
@@ -88,7 +94,7 @@ class Supplier(models.Model):
     supplier_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.RESTRICT,
+        on_delete=models.PROTECT,
         related_name="suppliers",
         db_column="user_id",
     )
@@ -102,7 +108,9 @@ class Supplier(models.Model):
         db_table = "suppliers"
         ordering = ["name"]
         constraints = [
-            models.UniqueConstraint(fields=["user", "name"], name="suppliers_user_name_uniq")
+            models.UniqueConstraint(
+                Lower("name"), "user", name="suppliers_user_lower_name_uniq"
+            )
         ]
 
     def clean(self):
@@ -125,23 +133,25 @@ class Transaction(models.Model):
     transaction_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.RESTRICT,
+        on_delete=models.PROTECT,
         related_name="transactions",
         db_column="user_id",
     )
     category = models.ForeignKey(
         Category,
-        on_delete=models.RESTRICT,
+        on_delete=models.PROTECT,
         related_name="transactions",
         db_column="category_id",
     )
     type = models.CharField(max_length=7, choices=Type.choices)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    amount = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))]
+    )
     transaction_date = models.DateField()
     description = models.CharField(max_length=255, blank=True, null=True)
     customer = models.ForeignKey(
         Customer,
-        on_delete=models.RESTRICT,
+        on_delete=models.PROTECT,
         related_name="transactions",
         db_column="customer_id",
         blank=True,
@@ -149,7 +159,7 @@ class Transaction(models.Model):
     )
     supplier = models.ForeignKey(
         Supplier,
-        on_delete=models.RESTRICT,
+        on_delete=models.PROTECT,
         related_name="transactions",
         db_column="supplier_id",
         blank=True,
@@ -161,6 +171,10 @@ class Transaction(models.Model):
     class Meta:
         db_table = "transactions"
         ordering = ["-transaction_date", "-transaction_id"]
+        indexes = [
+            models.Index(fields=["user", "transaction_date"], name="txn_user_date_idx"),
+            models.Index(fields=["user", "type", "transaction_date"], name="txn_user_type_date_idx"),
+        ]
         constraints = [
             models.CheckConstraint(
                 condition=Q(type__in=["INCOME", "EXPENSE"]),

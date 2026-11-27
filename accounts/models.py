@@ -101,7 +101,7 @@ class ActivityLog(models.Model):
 
     log_id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(
-        User, on_delete=models.RESTRICT, related_name="activity_logs", db_column="user_id"
+        User, on_delete=models.PROTECT, related_name="activity_logs", db_column="user_id"
     )
     action = models.CharField(max_length=10, choices=Action.choices)
     entity_name = models.CharField(max_length=30, blank=True, null=True)
