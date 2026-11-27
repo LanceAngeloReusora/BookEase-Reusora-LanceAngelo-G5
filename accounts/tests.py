@@ -42,7 +42,9 @@ class RegistrationTests(TestCase):
         self.assertEqual(user.role, User.Role.OWNER)
         self.assertTrue(user.is_active)
         self.assertTrue(
-            ActivityLog.objects.filter(user=user, action=ActivityLog.Action.REGISTER).exists()
+            ActivityLog.objects.filter(
+                user=user, action=ActivityLog.Action.REGISTER
+            ).exists()
         )
 
     def test_password_is_hashed(self):
@@ -82,13 +84,17 @@ class RegistrationTests(TestCase):
         self.assertEqual(User.objects.count(), 0)
 
     def test_password_too_short(self):
-        response = self.client.post(self.url, self.data(password1="Ab1!xyz", password2="Ab1!xyz"))
+        response = self.client.post(
+            self.url, self.data(password1="Ab1!xyz", password2="Ab1!xyz")
+        )
         self.assertIn("password2", response.context["form"].errors)
         self.assertEqual(User.objects.count(), 0)
 
     def test_cannot_self_register_as_admin(self):
         self.client.post(self.url, self.data(role="ADMIN"))
-        self.assertEqual(User.objects.get(email="juan@example.com").role, User.Role.OWNER)
+        self.assertEqual(
+            User.objects.get(email="juan@example.com").role, User.Role.OWNER
+        )
 
     def test_logged_in_user_is_redirected_away(self):
         self.client.force_login(make_owner())
@@ -105,7 +111,9 @@ class LoginLogoutTests(TestCase):
     def test_owner_login_goes_to_owner_dashboard(self):
         make_owner()
         response = self.client.post(
-            self.login_url, {"username": "owner@example.com", "password": PASSWORD}, follow=True
+            self.login_url,
+            {"username": "owner@example.com", "password": PASSWORD},
+            follow=True,
         )
         self.assertRedirects(response, reverse("accounts:owner_dashboard"))
         self.assertContains(response, "Welcome back")
@@ -113,7 +121,9 @@ class LoginLogoutTests(TestCase):
     def test_admin_login_goes_to_admin_dashboard(self):
         make_admin()
         response = self.client.post(
-            self.login_url, {"username": "admin@example.com", "password": PASSWORD}, follow=True
+            self.login_url,
+            {"username": "admin@example.com", "password": PASSWORD},
+            follow=True,
         )
         self.assertRedirects(response, reverse("accounts:admin_dashboard"))
 
@@ -127,7 +137,8 @@ class LoginLogoutTests(TestCase):
     def test_invalid_credentials(self):
         make_owner()
         response = self.client.post(
-            self.login_url, {"username": "owner@example.com", "password": "wrong-password"}
+            self.login_url,
+            {"username": "owner@example.com", "password": "wrong-password"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Invalid email or password")
@@ -192,13 +203,19 @@ class AccessControlTests(TestCase):
 
     def test_owner_cannot_open_admin_pages(self):
         self.client.force_login(make_owner())
-        for name in ("accounts:admin_dashboard", "accounts:admin_users", "accounts:admin_activity"):
+        for name in (
+            "accounts:admin_dashboard",
+            "accounts:admin_users",
+            "accounts:admin_activity",
+        ):
             with self.subTest(page=name):
                 self.assertEqual(self.client.get(reverse(name)).status_code, 403)
 
     def test_admin_cannot_open_owner_dashboard(self):
         self.client.force_login(make_admin())
-        self.assertEqual(self.client.get(reverse("accounts:owner_dashboard")).status_code, 403)
+        self.assertEqual(
+            self.client.get(reverse("accounts:owner_dashboard")).status_code, 403
+        )
 
     def test_dashboard_router_by_role(self):
         self.client.force_login(make_owner())
@@ -216,7 +233,10 @@ class AccessControlTests(TestCase):
 
     def test_dashboards_show_role_content(self):
         self.client.force_login(make_owner())
-        self.assertContains(self.client.get(reverse("accounts:owner_dashboard")), "Business Owner dashboard")
+        self.assertContains(
+            self.client.get(reverse("accounts:owner_dashboard")),
+            "Business Owner dashboard",
+        )
         self.client.force_login(make_admin())
         response = self.client.get(reverse("accounts:admin_dashboard"))
         self.assertContains(response, "Administrator dashboard")
@@ -230,9 +250,13 @@ class AccessControlTests(TestCase):
     def test_deactivated_users_session_stops_working(self):
         user = make_owner()
         self.client.force_login(user)
-        self.assertEqual(self.client.get(reverse("accounts:owner_dashboard")).status_code, 200)
+        self.assertEqual(
+            self.client.get(reverse("accounts:owner_dashboard")).status_code, 200
+        )
         User.objects.filter(pk=user.pk).update(is_active=False)
-        self.assertEqual(self.client.get(reverse("accounts:owner_dashboard")).status_code, 302)
+        self.assertEqual(
+            self.client.get(reverse("accounts:owner_dashboard")).status_code, 302
+        )
 
 
 class ProfileTests(TestCase):
@@ -250,7 +274,11 @@ class ProfileTests(TestCase):
     def test_update_profile(self):
         response = self.client.post(
             reverse("accounts:profile_edit"),
-            {"full_name": "Olive R. Owner", "business_name": "New Shop", "email": "New@Example.com"},
+            {
+                "full_name": "Olive R. Owner",
+                "business_name": "New Shop",
+                "email": "New@Example.com",
+            },
             follow=True,
         )
         self.assertRedirects(response, reverse("accounts:profile"))
@@ -280,7 +308,12 @@ class ProfileTests(TestCase):
     def test_role_cannot_be_changed_via_profile(self):
         self.client.post(
             reverse("accounts:profile_edit"),
-            {"full_name": "Olive", "business_name": "", "email": "owner@example.com", "role": "ADMIN"},
+            {
+                "full_name": "Olive",
+                "business_name": "",
+                "email": "owner@example.com",
+                "role": "ADMIN",
+            },
         )
         self.user.refresh_from_db()
         self.assertEqual(self.user.role, User.Role.OWNER)
@@ -312,7 +345,11 @@ class ProfileTests(TestCase):
     def test_change_password_wrong_old_password(self):
         response = self.client.post(
             reverse("accounts:password_change"),
-            {"old_password": "nope", "new_password1": "Another-Str0ng-Pass", "new_password2": "Another-Str0ng-Pass"},
+            {
+                "old_password": "nope",
+                "new_password1": "Another-Str0ng-Pass",
+                "new_password2": "Another-Str0ng-Pass",
+            },
         )
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
@@ -332,7 +369,11 @@ class AdminUserManagementTests(TestCase):
         self.toggle(self.owner)
         self.owner.refresh_from_db()
         self.assertFalse(self.owner.is_active)
-        self.assertTrue(self.admin.activity_logs.filter(action="UPDATE", entity_id=self.owner.pk).exists())
+        self.assertTrue(
+            self.admin.activity_logs.filter(
+                action="UPDATE", entity_id=self.owner.pk
+            ).exists()
+        )
         self.toggle(self.owner)
         self.owner.refresh_from_db()
         self.assertTrue(self.owner.is_active)
@@ -351,14 +392,20 @@ class AdminUserManagementTests(TestCase):
 
     def test_toggle_rejects_get(self):
         self.assertEqual(
-            self.client.get(reverse("accounts:admin_user_toggle", args=[self.owner.pk])).status_code, 405
+            self.client.get(
+                reverse("accounts:admin_user_toggle", args=[self.owner.pk])
+            ).status_code,
+            405,
         )
 
     def test_open_redirect_is_blocked(self):
         response = self.client.post(
-            reverse("accounts:admin_user_toggle", args=[self.owner.pk]), {"next": "https://evil.example.com/"}
+            reverse("accounts:admin_user_toggle", args=[self.owner.pk]),
+            {"next": "https://evil.example.com/"},
         )
-        self.assertRedirects(response, reverse("accounts:admin_users"), fetch_redirect_response=False)
+        self.assertRedirects(
+            response, reverse("accounts:admin_users"), fetch_redirect_response=False
+        )
 
     def test_user_search(self):
         make_owner("findme@example.com", full_name="Zed Zebra")
@@ -369,9 +416,12 @@ class AdminUserManagementTests(TestCase):
     def test_admin_activity_log_view(self):
         self.client.post(reverse("accounts:logout"))
         self.client.post(
-            reverse("accounts:login"), {"username": self.admin.email, "password": PASSWORD}
+            reverse("accounts:login"),
+            {"username": self.admin.email, "password": PASSWORD},
         )
-        response = self.client.get(reverse("accounts:admin_activity"), {"action": "LOGIN"})
+        response = self.client.get(
+            reverse("accounts:admin_activity"), {"action": "LOGIN"}
+        )
         self.assertContains(response, "admin@example.com")
 
     def test_django_admin_does_not_expose_bookkeeping_models(self):
@@ -398,7 +448,9 @@ class DatabaseConstraintTests(TestCase):
 
     def test_role_check_br02(self):
         with self.assertRaises(IntegrityError), transaction.atomic():
-            User.objects.create(email="r@example.com", full_name="X", password="x", role="HACKER")
+            User.objects.create(
+                email="r@example.com", full_name="X", password="x", role="HACKER"
+            )
 
     def test_activity_action_check_br22(self):
         user = make_owner()
@@ -429,14 +481,30 @@ class DatabaseConstraintTests(TestCase):
             }
             log_cols = {
                 c.name
-                for c in connection.introspection.get_table_description(cursor, "activity_logs")
+                for c in connection.introspection.get_table_description(
+                    cursor, "activity_logs"
+                )
             }
         for expected in (
-            "user_id", "email", "password_hash", "full_name",
-            "business_name", "role", "is_active", "created_at",
+            "user_id",
+            "email",
+            "password_hash",
+            "full_name",
+            "business_name",
+            "role",
+            "is_active",
+            "created_at",
         ):
             self.assertIn(expected, cols)
-        for expected in ("log_id", "user_id", "action", "entity_name", "entity_id", "details", "created_at"):
+        for expected in (
+            "log_id",
+            "user_id",
+            "action",
+            "entity_name",
+            "entity_id",
+            "details",
+            "created_at",
+        ):
             self.assertIn(expected, log_cols)
 
 
@@ -446,7 +514,7 @@ class CustomErrorPageTests(TestCase):
         response = self.client.get("/this-route-does-not-exist/")
         self.assertEqual(response.status_code, 404)
         self.assertContains(response, "Page not found", status_code=404)
-        self.assertNotContains(response, "Traceback")
+        self.assertNotContains(response, "Traceback", status_code=404)
 
     def test_custom_500_template_is_generic(self):
         from django.test import RequestFactory
@@ -454,9 +522,10 @@ class CustomErrorPageTests(TestCase):
 
         request = RequestFactory().get("/")
         from django.contrib.auth.models import AnonymousUser
+
         request.user = AnonymousUser()
         request._messages = []
         response = server_error(request)
         self.assertEqual(response.status_code, 500)
         self.assertContains(response, "Something went wrong", status_code=500)
-        self.assertNotContains(response, "Traceback")
+        self.assertNotContains(response, "Traceback", status_code=500)
